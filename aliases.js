@@ -1,0 +1,15 @@
+var ALIASES = {};
+ALIASES['byteorder'] = {};
+ALIASES['enum_primitive'] = {};
+ALIASES['libc'] = {};
+ALIASES['modbus'] = {};
+ALIASES['num'] = {};
+ALIASES['num_bigint'] = {};
+ALIASES['num_complex'] = {};
+ALIASES['num_integer'] = {};
+ALIASES['num_iter'] = {};
+ALIASES['num_rational'] = {};
+ALIASES['num_traits'] = {};
+ALIASES['num_traits'] = {};
+ALIASES['rand'] = {};
+ALIASES['rustc_serialize'] = {};
