@@ -16,4 +16,6 @@ pub trait Client {
     fn write_single_register(&mut self, address: u16, value: u16) -> Result<()>;
 
     fn write_multiple_registers(&mut self, address: u16, values: &[u16]) -> Result<()>;
+
+    fn set_slave(&mut self, slave_id: u8);
 }

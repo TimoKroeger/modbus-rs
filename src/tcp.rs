@@ -317,6 +317,11 @@ impl Client for Transport {
         let bytes = binary::unpack_bytes(values);
         self.write_multiple(&Function::WriteMultipleRegisters(addr, values.len() as u16, &bytes))
     }
+
+    /// Select the slave by id. Maps to the unit id in a ModbusTCP message.
+    fn set_slave(&mut self, slave_id: u8) {
+        self.uid = slave_id;
+    }
 }
 
 #[cfg(test)]
