@@ -5,6 +5,7 @@
 //! ```
 //! # extern crate modbus;
 //! # extern crate test_server;
+//! # use std::net::TcpStream;
 //! # use test_server::start_dummy_server;
 //! # fn main() {
 //! use modbus::{Client, Coil};
@@ -12,9 +13,8 @@
 //! # if cfg!(feature = "modbus-server-tests") {
 //! # let (_s, port) = start_dummy_server(Some(22221));
 //!
-//! let mut cfg = tcp::Config::default();
-//! # cfg.tcp_port = port;
-//! let mut client = tcp::Transport::new_with_cfg("127.0.0.1", cfg).unwrap();
+//! let s = TcpStream::connect(("127.0.0.1", port)).unwrap();
+//! let mut client = tcp::Transport::new(Box::new(s));
 //! assert!(client.write_single_coil(0, Coil::On).is_ok());
 //! # }
 //! # }
@@ -36,7 +36,6 @@ pub mod scoped;
 /// The Modbus TCP backend implements a Modbus variant used for communication over TCP/IPv4 networks.
 pub mod tcp;
 pub use tcp::Transport;
-pub use tcp::Config;
 pub use client::Client;
 
 type Address = u16;

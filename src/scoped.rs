@@ -7,6 +7,7 @@
 //! ```
 //! # extern crate modbus;
 //! # extern crate test_server;
+//! # use std::net::TcpStream;
 //! # use test_server::start_dummy_server;
 //! # fn main() {
 //! use modbus::{Client, Coil};
@@ -15,9 +16,8 @@
 //! # if cfg!(feature = "modbus-server-tests") {
 //! # let (_s, port) = start_dummy_server(Some(22222));
 //!
-//! let mut cfg = tcp::Config::default();
-//! # cfg.tcp_port = port;
-//! let mut client = tcp::Transport::new_with_cfg("127.0.0.1", cfg).unwrap();
+//! let s = TcpStream::connect(("127.0.0.1", port)).unwrap();
+//! let mut client = tcp::Transport::new(Box::new(s));
 //! {
 //!    let mut auto = ScopedCoil::new(&mut client, 10, CoilDropFunction::On).unwrap();
 //!    assert_eq!(auto.mut_transport().read_coils(10, 1).unwrap(), vec![Coil::Off]);
@@ -33,6 +33,7 @@
 //! ```
 //! # extern crate modbus;
 //! # extern crate test_server;
+//! # use std::net::TcpStream;
 //! # use test_server::start_dummy_server;
 //! # fn main() {
 //! use modbus::{Client, Coil};
@@ -41,9 +42,8 @@
 //! # if cfg!(feature = "modbus-server-tests") {
 //! # let (_s, port) = start_dummy_server(Some(22223));
 //!
-//! let mut cfg = tcp::Config::default();
-//! # cfg.tcp_port = port;
-//! let mut client = tcp::Transport::new_with_cfg("127.0.0.1", cfg).unwrap();
+//! let s = TcpStream::connect(("127.0.0.1", port)).unwrap();
+//! let mut client = tcp::Transport::new(Box::new(s));
 //! client.write_single_register(10, 1);
 //! {
 //!     let fun = |v| v + 5;

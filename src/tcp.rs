@@ -1,42 +1,12 @@
-use std::io::{self, Write, Read, Cursor};
-use std::net::{TcpStream, Shutdown, ToSocketAddrs};
-use std::time::Duration;
-use std::borrow::BorrowMut;
-use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use enum_primitive::FromPrimitive;
-use {Function, Reason, Result, ExceptionCode, Error, Coil, binary, Client};
+use std::borrow::BorrowMut;
+use std::io::{Cursor, Read, Write};
+use {binary, Client, Coil, Error, ExceptionCode, Function, Reason, Result};
 
 const MODBUS_PROTOCOL_TCP: u16 = 0x0000;
-const MODBUS_TCP_DEFAULT_PORT: u16 = 502;
 const MODBUS_HEADER_SIZE: usize = 7;
 const MODBUS_MAX_PACKET_SIZE: usize = 260;
-
-/// Config structure for more control over the tcp socket settings
-#[derive(Clone, Copy)]
-pub struct Config {
-    /// The TCP port to use for communication (Default: `502`)
-    pub tcp_port: u16,
-    /// Connection timeout for TCP socket (Default: `OS Default`)
-    pub tcp_connect_timeout: Option<Duration>,
-    /// Timeout when reading from the TCP socket (Default: `infinite`)
-    pub tcp_read_timeout: Option<Duration>,
-    /// Timeout when writing to the TCP socket (Default: `infinite`)
-    pub tcp_write_timeout: Option<Duration>,
-    /// The modbus Unit Identifier used in the modbus layer (Default: `1`)
-    pub modbus_uid: u8,
-}
-
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            tcp_port: MODBUS_TCP_DEFAULT_PORT,
-            tcp_connect_timeout: None,
-            tcp_read_timeout: None,
-            tcp_write_timeout: None,
-            modbus_uid: 1,
-        }
-    }
-}
 
 #[derive(Debug, PartialEq)]
 struct Header {
@@ -71,48 +41,29 @@ impl Header {
             tid: rdr.read_u16::<BigEndian>()?,
             pid: rdr.read_u16::<BigEndian>()?,
             len: rdr.read_u16::<BigEndian>()?,
-            uid: rdr.read_u8()?
+            uid: rdr.read_u8()?,
         })
     }
 }
 
+pub trait Stream : Read + Write {}
+impl<T> Stream for T where T: Read + Write {}
+
 /// Context object which holds state for all modbus operations.
-pub struct Transport {
+pub struct Transport
+{
     tid: u16,
     uid: u8,
-    stream: TcpStream,
+    stream: Box<Stream>,
 }
 
-impl Transport {
-    /// Create a new context context object and connect it to `addr` on modbus-tcp default
-    /// port (502)
-    pub fn new(addr: &str) -> io::Result<Transport> {
-        Self::new_with_cfg(addr, Config::default())
-    }
-
-    /// Create a new context object and connect it to `addr` on port `port`
-    pub fn new_with_cfg(addr: &str, cfg: Config) -> io::Result<Transport> {
-        let stream = match cfg.tcp_connect_timeout {
-            Some(timeout) => {
-                // Call to connect_timeout needs to be done on a single address
-                let mut socket_addrs = (addr, cfg.tcp_port).to_socket_addrs()?;
-                TcpStream::connect_timeout(&socket_addrs.next().unwrap(), timeout)
-            },
-            None => TcpStream::connect((addr, cfg.tcp_port)),
-        };
-
-        match stream {
-            Ok(s) => {
-                s.set_read_timeout(cfg.tcp_read_timeout)?;
-                s.set_write_timeout(cfg.tcp_write_timeout)?;
-                s.set_nodelay(true)?;
-                Ok(Transport {
-                    tid: 0,
-                    uid: cfg.modbus_uid,
-                    stream: s,
-                })
-            }
-            Err(e) => Err(e),
+impl Transport
+{
+    pub fn new(s: Box<Stream>) -> Self {
+        Self {
+            tid: 0,
+            uid: 0xFF,
+            stream: s,
         }
     }
 
@@ -264,10 +215,6 @@ impl Transport {
             }
             Err(e) => Err(Error::Io(e)),
         }
-    }
-
-    pub fn close(self: &mut Self) -> Result<()> {
-        self.stream.shutdown(Shutdown::Both).map_err(Error::Io)
     }
 }
 

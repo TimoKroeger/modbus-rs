@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate clap;
 extern crate modbus;
+use std::net::TcpStream;
 use modbus::{Client, Coil};
 use modbus::tcp;
 use clap::App;
@@ -35,7 +36,8 @@ fn main() {
                           values to ADDR (use \"..\" to group them e.g. \"23, 24, 25\")'")
         .get_matches();
 
-    let mut client = tcp::Transport::new(matches.value_of("SERVER").unwrap()).unwrap();
+    let tcp_stream = TcpStream::connect((matches.value_of("SERVER").unwrap(), 502)).unwrap();
+    let mut client = tcp::Transport::new(Box::new(tcp_stream));
 
     if let Some(args) = matches.values_of("read-coils") {
         let args: Vec<&str> = args.collect();
